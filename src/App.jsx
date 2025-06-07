@@ -89,6 +89,12 @@ function App({ currentPath }) {
   const addBlogPost = (newPost) => {
     setBlogPosts((prev) => [newPost, ...prev]);
   };
+  
+  const [games, setGames] = useState([...]); // existing line
+
+function deleteGame(id) => {
+  setGames((prevGames) => prevGames.filter((game) => game.id !== id));
+  };
 
   const deleteBlogPost = (postId) => {
     setBlogPosts((prev) => prev.filter((post) => post.id !== postId));
