@@ -86,14 +86,12 @@ function App({ currentPath }) {
     setGames((prev) => [...prev, newGame]);
   };
 
+  const deleteGame = (gameId) => {
+    setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+  };
+
   const addBlogPost = (newPost) => {
     setBlogPosts((prev) => [newPost, ...prev]);
-  };
-  
-  const [games, setGames] = useState([...]); // existing line
-
-function deleteGame(id) => {
-  setGames((prevGames) => prevGames.filter((game) => game.id !== id));
   };
 
   const deleteBlogPost = (postId) => {
@@ -169,14 +167,13 @@ function deleteGame(id) => {
             }
           />
           <Route
-             path="/add"
+            path="/add"
             element={
-             <WithBackButton>
-             <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} />
-             </WithBackButton>
+              <WithBackButton>
+                <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} />
+              </WithBackButton>
             }
           />
-
         </Routes>
       </main>
     </div>
