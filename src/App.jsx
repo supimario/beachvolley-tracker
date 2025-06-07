@@ -94,6 +94,10 @@ function App({ currentPath }) {
     setBlogPosts((prev) => [newPost, ...prev]);
   };
 
+  const deleteGame = (gameId) => {
+  setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+  };
+
   const deleteBlogPost = (postId) => {
     setBlogPosts((prev) => prev.filter((post) => post.id !== postId));
   };
