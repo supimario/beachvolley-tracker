@@ -4,6 +4,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedGame, setEditedGame] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
+  const [deleteId, setDeleteId] = useState(null); // NEW: track the actual game ID
 
   const countSetWins = (sets) => {
     let team1Wins = 0;
@@ -37,17 +38,20 @@ function GameList({ games, onEditGame, onDeleteGame }) {
     setEditedGame(null);
   };
 
-  const confirmDelete = (index) => {
+  const confirmDelete = (index, id) => {
     setDeleteIndex(index);
+    setDeleteId(id); // NEW: store the game ID too
   };
 
   const cancelDelete = () => {
     setDeleteIndex(null);
+    setDeleteId(null); // NEW: reset game ID
   };
 
   const handleDelete = () => {
-    onDeleteGame(games[deleteIndex].id);
+    onDeleteGame(deleteId); // FIXED: use ID instead of index-based lookup
     setDeleteIndex(null);
+    setDeleteId(null);
   };
 
   return (
@@ -206,7 +210,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
                       Edit
                     </button>
                     <button
-                      onClick={() => confirmDelete(index)}
+                      onClick={() => confirmDelete(index, game.id)}
                       className="px-3 py-1 text-white bg-red-600 rounded"
                     >
                       Delete
