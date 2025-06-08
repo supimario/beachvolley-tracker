@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 
-function GameList({ games, onEditGame }) {
+function GameList({ games, onEditGame, onDeleteGame }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedGame, setEditedGame] = useState(null);
+  const [deleteIndex, setDeleteIndex] = useState(null);
 
   const countSetWins = (sets) => {
     let team1Wins = 0;
@@ -34,6 +35,19 @@ function GameList({ games, onEditGame }) {
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditedGame(null);
+  };
+
+  const confirmDelete = (index) => {
+    setDeleteIndex(index);
+  };
+
+  const cancelDelete = () => {
+    setDeleteIndex(null);
+  };
+
+  const handleDelete = () => {
+    onDeleteGame(games[deleteIndex].id);
+    setDeleteIndex(null);
   };
 
   return (
@@ -184,14 +198,44 @@ function GameList({ games, onEditGame }) {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => handleEditClick(index)}
-                    className="px-3 py-1 text-white bg-blue-600 rounded"
-                  >
-                    Edit
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleEditClick(index)}
+                      className="px-3 py-1 text-white bg-blue-600 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => confirmDelete(index)}
+                      className="px-3 py-1 text-white bg-red-600 rounded"
+                    >
+                      Delete
+                    </button>
+                  </>
                 )}
               </div>
+
+              {deleteIndex === index && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
+                  <p className="text-sm font-semibold text-red-700 mb-2">
+                    Are you sure you want to delete this game?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1 text-white bg-red-700 rounded"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={cancelDelete}
+                      className="px-3 py-1 text-white bg-gray-500 rounded"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })

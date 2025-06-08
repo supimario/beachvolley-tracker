@@ -88,13 +88,6 @@ function App({ currentPath }) {
 
   const deleteGame = (gameId) => {
     setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
-<<<<<<< HEAD
-  };
-
-  const addBlogPost = (newPost) => {
-    setBlogPosts((prev) => [newPost, ...prev]);
-=======
->>>>>>> 97e713d (Your commit message, e.g. 'Implement edit game feature')
   };
 
   const editGame = (updatedGame, index) => {
@@ -197,11 +190,7 @@ function App({ currentPath }) {
             path="/add"
             element={
               <WithBackButton>
-<<<<<<< HEAD
                 <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} />
-=======
-                <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} onEditGame={editGame} />
->>>>>>> 97e713d (Your commit message, e.g. 'Implement edit game feature')
               </WithBackButton>
             }
           />
