@@ -6,7 +6,7 @@ import PlayerSignup from "./pages/PlayerSignup";
 import LoginForm from "./components/LoginForm";
 import GameForm from "./components/GameForm";
 import GameList from "./components/GameList";
-import Add from "./pages/Add";
+import Add from "./pages/Add"; // ✅ Keep using Add.jsx
 import Players from "./pages/Players";
 import Blog from "./pages/Blog";
 import Profile from "./pages/Profile";
@@ -190,7 +190,14 @@ function App({ currentPath }) {
             path="/add"
             element={
               <WithBackButton>
-                <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} />
+                <Add
+                  players={players}
+                  games={games}
+                  addGame={addGame}
+                  deleteGame={deleteGame}
+                  setGames={setGames} // ✅ FIXED: enable per-game deletion
+                  loggedInUser={loggedInUser} // optional, if used in Add
+                />
               </WithBackButton>
             }
           />
