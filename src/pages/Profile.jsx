@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  PieChart, Pie, Cell, Tooltip, Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 function Profile({ loggedInUser, players, games }) {
   const { email: playerEmail } = useParams();
@@ -14,23 +12,46 @@ function Profile({ loggedInUser, players, games }) {
 
   if (!playerToShow) return <p>Player not found.</p>;
 
-  const playerGames = games.filter(
-    (g) => g.playerEmail === playerToShow.email
-  );
+  const isPlayerInGame = (game) =>
+    game.teams?.some((team) => team.some((p) => p.includes(playerToShow.email)));
 
-  const lastFiveGames = playerGames
-    .slice()
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+  const playerGames = games.filter(isPlayerInGame).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const lastFiveGames = playerGames.slice(0, 5);
 
-  const wins = playerGames.filter((g) => g.result === "win").length;
-  const losses = playerGames.filter((g) => g.result === "loss").length;
-  const draws = playerGames.filter((g) => g.result === "draw").length;
+  let wins = 0, losses = 0;
+
+  const getGameResult = (game) => {
+    let team1Wins = 0, team2Wins = 0;
+
+    game.sets.forEach(({ team1, team2 }) => {
+      if (team1 > team2) team1Wins++;
+      else if (team2 > team1) team2Wins++;
+    });
+
+    const onTeam1 = game.teams[0].some((p) => p.includes(playerToShow.email));
+    const onTeam2 = game.teams[1].some((p) => p.includes(playerToShow.email));
+
+    if (team1Wins === team2Wins) return "draw";
+    return (onTeam1 && team1Wins > team2Wins) || (onTeam2 && team2Wins > team1Wins)
+      ? "win"
+      : "loss";
+  };
+
+  const enrichedGames = playerGames.map((game) => {
+    const result = getGameResult(game);
+    if (result === "win") wins++;
+    else if (result === "loss") losses++;
+    const opponentTeam = game.teams.find((team) => !team.some((p) => p.includes(playerToShow.email)));
+    return {
+      ...game,
+      result,
+      opponent: opponentTeam ? opponentTeam.join(", ") : "Unknown",
+    };
+  });
 
   const pieData = [
     { name: "Wins", value: wins, color: "#4caf50" },
     { name: "Losses", value: losses, color: "#f44336" },
-    { name: "Draws", value: draws, color: "#ffc107" },
   ].filter((entry) => entry.value > 0);
 
   const calculateAge = (dobStr) => {
@@ -48,9 +69,9 @@ function Profile({ loggedInUser, players, games }) {
       <h1 className="text-3xl font-bold mb-4">{playerToShow.name}'s Profile</h1>
 
       <img
-       src={playerToShow.avatarUrl || "/default-avatar.jpg"}
+        src={playerToShow.avatarUrl || "/default-avatar.jpg"}
         alt="User Avatar"
-        style={{ width: "100px", height: "100px", borderRadius: "50%", marginBottom: "1rem" }}
+        className="w-24 h-24 rounded-full mb-4"
       />
 
       <p><strong>Email:</strong> {playerToShow.email}</p>
@@ -65,7 +86,7 @@ function Profile({ loggedInUser, players, games }) {
         <p>No games found.</p>
       ) : (
         <ul className="mb-4">
-          {lastFiveGames.map((game) => (
+          {enrichedGames.slice(0, 5).map((game) => (
             <li key={game.id || game.date}>
               <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
             </li>
@@ -106,18 +127,15 @@ function Profile({ loggedInUser, players, games }) {
       {showAllGames && (
         <>
           <h2 className="text-2xl font-semibold mt-6 mb-2">Full Game History</h2>
-          {playerGames.length === 0 ? (
+          {enrichedGames.length === 0 ? (
             <p>No games found.</p>
           ) : (
             <ul>
-              {playerGames
-                .slice()
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .map((game) => (
-                  <li key={game.id || game.date}>
-                    <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
-                  </li>
-                ))}
+              {enrichedGames.map((game) => (
+                <li key={game.id || game.date}>
+                  <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
+                </li>
+              ))}
             </ul>
           )}
         </>

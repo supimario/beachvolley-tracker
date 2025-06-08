@@ -1,36 +1,109 @@
 import React from "react";
+import { useParams, Link } from "react-router-dom";
+import { getGamesForPlayer } from "../utils/gameUtils";
+import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 
-const PlayerProfile = ({ player, games }) => {
-  const playerGames = games.filter(
-    (game) =>
-      game.team1.players.some((p) => p.email === player.email) ||
-      game.team2.players.some((p) => p.email === player.email)
-  );
+const COLORS = ["#4CAF50", "#F44336"];
 
-  const wins = playerGames.filter((game) => {
-    const isTeam1 = game.team1.players.some((p) => p.email === player.email);
-    return (isTeam1 && game.team1.score > game.team2.score) ||
-           (!isTeam1 && game.team2.score > game.team1.score);
+const PlayerProfile = ({ players, games }) => {
+  const { email } = useParams();
+  const player = players.find((p) => p.email === email);
+
+  if (!player) return <p>Player not found</p>;
+
+  // Find games where player is in either team
+  const playerGames = games
+    .filter((game) =>
+      game.teams.some((team) => team.includes(email))
+    )
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const lastFiveGames = playerGames.slice(0, 5);
+
+  // Count wins and losses
+  let wins = 0, losses = 0;
+
+  playerGames.forEach((game) => {
+    const { team1Wins, team2Wins } = game.sets.reduce(
+      (acc, set) => {
+        if (set.team1 > set.team2) acc.team1Wins++;
+        else if (set.team2 > set.team1) acc.team2Wins++;
+        return acc;
+      },
+      { team1Wins: 0, team2Wins: 0 }
+    );
+
+    const playerOnTeam1 = game.teams[0].includes(email);
+    const playerOnTeam2 = game.teams[1].includes(email);
+
+    if ((team1Wins > team2Wins && playerOnTeam1) || (team2Wins > team1Wins && playerOnTeam2)) {
+      wins++;
+    } else {
+      losses++;
+    }
   });
 
-  const winRate = playerGames.length > 0 ? (wins.length / playerGames.length) * 100 : 0;
+  const pieData = [
+    { name: "Wins", value: wins },
+    { name: "Losses", value: losses },
+  ];
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">{player.name}'s Profile</h2>
-      <p className="mb-2"><strong>Email:</strong> {player.email}</p>
-      <p className="mb-2"><strong>Games Played:</strong> {playerGames.length}</p>
-      <p className="mb-4"><strong>Win Rate:</strong> {winRate.toFixed(1)}%</p>
+    <div>
+      <h2>{player.name}’s Profile</h2>
 
-      <h3 className="text-xl font-semibold mt-6 mb-2">Game History</h3>
-      {playerGames.length === 0 ? (
-        <p className="text-gray-500">No games played yet.</p>
+      <img
+        src={player.avatarUrl || "/default-avatar.jpg"}
+        alt="User Avatar"
+        style={{ width: "100px", height: "100px", borderRadius: "50%" }}
+      />
+
+      <h3>Overall Performance</h3>
+      <PieChart width={300} height={250}>
+        <Pie
+          data={pieData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ name, percent }) =>
+            `${name}: ${(percent * 100).toFixed(0)}%`
+          }
+          outerRadius={80}
+          dataKey="value"
+        >
+          {pieData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+
+      <h3>Recent Games</h3>
+      {lastFiveGames.length === 0 ? (
+        <p>No games found for this player.</p>
       ) : (
-        <ul className="list-disc pl-5">
-          {playerGames.map((game, index) => (
-            <li key={index} className="mb-1">
-              {game.team1.players.map(p => p.name).join(" & ")} ({game.team1.score}) vs{" "}
-              {game.team2.players.map(p => p.name).join(" & ")} ({game.team2.score})
+        <ul>
+          {lastFiveGames.map((game, i) => (
+            <li key={i}>
+              {new Date(game.date).toLocaleDateString()} - vs.{" "}
+              {game.teams[0].includes(email)
+                ? game.teams[1].join(", ")
+                : game.teams[0].join(", ")}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3>All Games</h3>
+      {playerGames.length === 0 ? (
+        <p>No game history available.</p>
+      ) : (
+        <ul>
+          {playerGames.map((game, i) => (
+            <li key={i}>
+              {new Date(game.date).toLocaleDateString()} -{" "}
+              {game.teams[0].join(" & ")} vs. {game.teams[1].join(" & ")}
             </li>
           ))}
         </ul>
