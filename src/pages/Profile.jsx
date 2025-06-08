@@ -15,8 +15,13 @@ function Profile({ loggedInUser, players, games }) {
   const isPlayerInGame = (game) =>
     game.teams?.some((team) => team.some((p) => p.includes(playerToShow.email)));
 
-  const playerGames = games.filter(isPlayerInGame).sort((a, b) => new Date(b.date) - new Date(a.date));
-  const lastFiveGames = playerGames.slice(0, 5);
+ const playerGames = games
+  .filter(isPlayerInGame)
+  .sort((a, b) => new Date(b.date) - new Date(a.date));
+ const lastFiveGames = playerGames.slice(0, 5);
+
+ console.log("Profile re-rendered", games.length);
+ console.log("Filtered games for player:", playerToShow.email, playerGames);
 
   let wins = 0, losses = 0;
 
