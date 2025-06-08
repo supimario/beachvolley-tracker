@@ -88,14 +88,23 @@ function App({ currentPath }) {
 
   const deleteGame = (gameId) => {
     setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+<<<<<<< HEAD
   };
 
   const addBlogPost = (newPost) => {
     setBlogPosts((prev) => [newPost, ...prev]);
+=======
+>>>>>>> 97e713d (Your commit message, e.g. 'Implement edit game feature')
   };
 
-  const deleteGame = (gameId) => {
-  setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+  const editGame = (updatedGame, index) => {
+    setGames((prevGames) =>
+      prevGames.map((g, i) => (i === index ? updatedGame : g))
+    );
+  };
+
+  const addBlogPost = (newPost) => {
+    setBlogPosts((prev) => [newPost, ...prev]);
   };
 
   const deleteBlogPost = (postId) => {
@@ -115,13 +124,27 @@ function App({ currentPath }) {
           <Route
             path="/"
             element={
-              <>
-                <GameForm players={players} addGame={addGame} loggedInUser={loggedInUser} />
-                <GameList games={games} />
-              </>
+              <WithBackButton>
+                <div className="text-center space-y-4">
+                  <h1 className="text-2xl font-bold">Welcome to beachvolley-tracker!</h1>
+                  <p className="text-lg">
+                    Track your beachvolleyball games with friends and have a look at your personal and overall seasonal stats!
+                    <br />
+                    Happy tracking with beachvolley-tracker!
+                  </p>
+                  <img
+                    src="/beachvolley-sunset.jpg"
+                    alt="Beachvolleyball Sunset"
+                    className="mx-auto rounded-xl shadow-lg max-w-full h-auto"
+                  />
+                </div>
+              </WithBackButton>
             }
           />
-          <Route path="/signup" element={<PlayerSignup registerPlayer={registerPlayer} navigate={navigate} />} />
+          <Route
+            path="/signup"
+            element={<PlayerSignup registerPlayer={registerPlayer} navigate={navigate} />}
+          />
           <Route
             path="/players"
             element={
@@ -174,7 +197,11 @@ function App({ currentPath }) {
             path="/add"
             element={
               <WithBackButton>
+<<<<<<< HEAD
                 <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} />
+=======
+                <Add players={players} games={games} addGame={addGame} deleteGame={deleteGame} onEditGame={editGame} />
+>>>>>>> 97e713d (Your commit message, e.g. 'Implement edit game feature')
               </WithBackButton>
             }
           />

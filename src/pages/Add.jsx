@@ -1,16 +1,14 @@
-import React from 'react';
-import GameForm from '../components/GameForm';
-import GameList from '../components/GameList';
+import React from "react";
+import GameForm from "../components/GameForm";
+import GameList from "../components/GameList";
 
-const Add = ({ players, games, addGame, deleteGame }) => {
+function Add({ players, games, addGame, deleteGame, onEditGame }) {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Add New Game</h1>
+    <div className="space-y-8">
       <GameForm players={players} addGame={addGame} />
-      <hr className="my-6" />
-      <GameList games={games} players={players} deleteGame={deleteGame} />
+      <GameList games={games} deleteGame={deleteGame} onEditGame={onEditGame} />
     </div>
   );
-};
+}
 
 export default Add;

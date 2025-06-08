@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 
-function GameList({ games }) {
-  // Helper to count sets won by each team
+function GameList({ games, onEditGame }) {
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editedGame, setEditedGame] = useState(null);
+
   const countSetWins = (sets) => {
     let team1Wins = 0;
     let team2Wins = 0;
@@ -12,6 +14,28 @@ function GameList({ games }) {
     return { team1Wins, team2Wins };
   };
 
+  const handleEditClick = (index) => {
+    setEditingIndex(index);
+    setEditedGame(JSON.parse(JSON.stringify(games[index])));
+  };
+
+  const handleInputChange = (value, setIndex, teamKey) => {
+    const updated = { ...editedGame };
+    updated.sets[setIndex][teamKey] = Number(value);
+    setEditedGame(updated);
+  };
+
+  const saveEdit = () => {
+    onEditGame(editedGame, editingIndex);
+    setEditingIndex(null);
+    setEditedGame(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditedGame(null);
+  };
+
   return (
     <div className="max-w-4xl mx-auto mt-8 space-y-6">
       <h2 className="text-2xl font-bold mb-4">Games Played</h2>
@@ -19,8 +43,9 @@ function GameList({ games }) {
         <p className="text-center text-gray-600">No games recorded yet.</p>
       ) : (
         games.map((game, index) => {
-          const { team1Wins, team2Wins } = countSetWins(game.sets);
-
+          const isEditing = editingIndex === index;
+          const currentGame = isEditing ? editedGame : game;
+          const { team1Wins, team2Wins } = countSetWins(currentGame.sets);
           const winner =
             team1Wins > team2Wins
               ? "Team 1"
@@ -29,17 +54,14 @@ function GameList({ games }) {
               : "Draw";
 
           return (
-            <div
-              key={index}
-              className="bg-white p-4 rounded shadow border"
-            >
+            <div key={index} className="bg-white p-4 rounded shadow border">
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <strong>Date:</strong>{" "}
-                  {new Date(game.date).toLocaleDateString()}
+                  {new Date(currentGame.date).toLocaleDateString()}
                 </div>
                 <div className="italic text-sm text-gray-600">
-                  Added by: {game.addedBy}
+                  Added by: {currentGame.addedBy}
                 </div>
               </div>
 
@@ -47,7 +69,7 @@ function GameList({ games }) {
                 <div>
                   <h3 className="font-semibold mb-1">Team 1</h3>
                   <ul className="list-disc list-inside text-gray-700">
-                    {game.teams[0].map((player, i) => (
+                    {currentGame.teams[0].map((player, i) => (
                       <li key={i}>{player}</li>
                     ))}
                   </ul>
@@ -56,7 +78,7 @@ function GameList({ games }) {
                 <div>
                   <h3 className="font-semibold mb-1">Team 2</h3>
                   <ul className="list-disc list-inside text-gray-700">
-                    {game.teams[1].map((player, i) => (
+                    {currentGame.teams[1].map((player, i) => (
                       <li key={i}>{player}</li>
                     ))}
                   </ul>
@@ -71,9 +93,11 @@ function GameList({ games }) {
                   <div>-</div>
                   <div className="text-red-700">Team 2</div>
                 </div>
-                {game.sets.map((set, i) => {
+
+                {currentGame.sets.map((set, i) => {
                   const team1Won = set.team1 > set.team2;
                   const team2Won = set.team2 > set.team1;
+
                   return (
                     <div
                       key={i}
@@ -82,20 +106,46 @@ function GameList({ games }) {
                       }`}
                     >
                       <div>#{i + 1}</div>
-                      <div
-                        className={
-                          team1Won ? "font-bold text-green-600" : ""
-                        }
-                      >
-                        {set.team1}
+                      <div>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={set.team1}
+                            onChange={(e) =>
+                              handleInputChange(e.target.value, i, "team1")
+                            }
+                            className="w-12 text-center border rounded"
+                          />
+                        ) : (
+                          <span
+                            className={
+                              team1Won ? "font-bold text-green-600" : ""
+                            }
+                          >
+                            {set.team1}
+                          </span>
+                        )}
                       </div>
                       <div>-</div>
-                      <div
-                        className={
-                          team2Won ? "font-bold text-green-600" : ""
-                        }
-                      >
-                        {set.team2}
+                      <div>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={set.team2}
+                            onChange={(e) =>
+                              handleInputChange(e.target.value, i, "team2")
+                            }
+                            className="w-12 text-center border rounded"
+                          />
+                        ) : (
+                          <span
+                            className={
+                              team2Won ? "font-bold text-green-600" : ""
+                            }
+                          >
+                            {set.team2}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -116,6 +166,32 @@ function GameList({ games }) {
                   {winner}
                 </span>
               </div>
+
+              <div className="mt-4 flex gap-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={saveEdit}
+                      className="px-3 py-1 text-white bg-green-600 rounded"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-3 py-1 text-white bg-gray-500 rounded"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleEditClick(index)}
+                    className="px-3 py-1 text-white bg-blue-600 rounded"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
             </div>
           );
         })
@@ -125,5 +201,3 @@ function GameList({ games }) {
 }
 
 export default GameList;
-
-
