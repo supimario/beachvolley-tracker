@@ -7,6 +7,7 @@ function PlayerProfile({ players, games }) {
   const [showAllGames, setShowAllGames] = useState(false);
 
   const playerToShow = players.find((p) => p.email === playerEmail);
+
   if (!playerToShow) return <p>Player not found.</p>;
 
   const isPlayerInGame = (game) =>
@@ -23,6 +24,7 @@ function PlayerProfile({ players, games }) {
 
   const getGameResult = (game) => {
     let team1Wins = 0, team2Wins = 0;
+
     game.sets.forEach(({ team1, team2 }) => {
       if (team1 > team2) team1Wins++;
       else if (team2 > team1) team2Wins++;
@@ -41,9 +43,7 @@ function PlayerProfile({ players, games }) {
     const result = getGameResult(game);
     if (result === "win") wins++;
     else if (result === "loss") losses++;
-    const opponentTeam = game.teams.find(
-      (team) => !team.some((p) => p.includes(playerToShow.email))
-    );
+    const opponentTeam = game.teams.find((team) => !team.some((p) => p.includes(playerToShow.email)));
     return {
       ...game,
       result,
@@ -88,8 +88,8 @@ function PlayerProfile({ players, games }) {
         <p>No games found.</p>
       ) : (
         <ul className="mb-4">
-          {enrichedGames.slice(0, 5).map((game) => (
-            <li key={game.id || game.date}>
+          {enrichedGames.slice(0, 5).map((game, index) => (
+            <li key={`${game.date}-${index}`}>
               <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
             </li>
           ))}
@@ -133,8 +133,8 @@ function PlayerProfile({ players, games }) {
             <p>No games found.</p>
           ) : (
             <ul>
-              {enrichedGames.map((game) => (
-                <li key={game.id || game.date}>
+              {enrichedGames.map((game, index) => (
+                <li key={`${game.date}-${index}`}>
                   <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
                 </li>
               ))}
