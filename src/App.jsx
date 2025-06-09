@@ -14,6 +14,7 @@ import PlayerProfile from "./pages/PlayerProfile";
 import Stats from "./pages/Stats";
 import Settings from "./pages/Settings";
 import WithBackButton from "./components/WithBackButton";
+import EventCalendar from "./components/EventCalendar"; // ✅ NEW IMPORT
 import { Routes, Route, useNavigate } from "react-router-dom";
 
 function App({ currentPath }) {
@@ -84,11 +85,11 @@ function App({ currentPath }) {
   };
 
   const addGame = (newGame) => {
-  setGames((prev) => {
-    const updated = [...prev, newGame];
-    localStorage.setItem("games", JSON.stringify(updated)); // Persist to localStorage
-    console.log("Saved games to localStorage:", updated);
-    return updated;
+    setGames((prev) => {
+      const updated = [...prev, newGame];
+      localStorage.setItem("games", JSON.stringify(updated)); // Persist to localStorage
+      console.log("Saved games to localStorage:", updated);
+      return updated;
     });
   };
 
@@ -136,6 +137,9 @@ function App({ currentPath }) {
                     alt="Beachvolleyball Sunset"
                     className="mx-auto rounded-xl shadow-lg max-w-full h-auto"
                   />
+                  <div className="mt-6">
+                    <EventCalendar /> {/* ✅ NEW CALENDAR COMPONENT */}
+                  </div>
                 </div>
               </WithBackButton>
             }
@@ -164,7 +168,12 @@ function App({ currentPath }) {
             path="/blog"
             element={
               <WithBackButton>
-                <Blog blogPosts={blogPosts} addBlogPost={addBlogPost} deleteBlogPost={deleteBlogPost} loggedInUser={loggedInUser} />
+                <Blog
+                  blogPosts={blogPosts}
+                  addBlogPost={addBlogPost}
+                  deleteBlogPost={deleteBlogPost}
+                  loggedInUser={loggedInUser}
+                />
               </WithBackButton>
             }
           />
@@ -188,7 +197,12 @@ function App({ currentPath }) {
             path="/settings"
             element={
               <WithBackButton>
-                <Settings loggedInUser={loggedInUser} players={players} setPlayers={setPlayers} setLoggedInUser={setLoggedInUser} />
+                <Settings
+                  loggedInUser={loggedInUser}
+                  players={players}
+                  setPlayers={setPlayers}
+                  setLoggedInUser={setLoggedInUser}
+                />
               </WithBackButton>
             }
           />
