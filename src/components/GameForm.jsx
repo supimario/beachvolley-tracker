@@ -119,6 +119,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
     );
 
     const newGame = {
+      id: Date.now(), // ✅ Unique ID to avoid deleting all games by date
       date,
       teams: [team1Final, team2Final],
       sets: filteredSets,
@@ -233,10 +234,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
       <div className="mb-4">
         <h3 className="font-semibold mb-2">Set Scores (up to 3 sets)</h3>
         {[0, 1, 2].map((setIdx) => (
-          <div
-            key={setIdx}
-            className="flex items-center gap-4 mb-2 max-w-sm"
-          >
+          <div key={setIdx} className="flex items-center gap-4 mb-2 max-w-sm">
             <span className="w-10 font-semibold">Set {setIdx + 1}</span>
             <input
               type="number"
