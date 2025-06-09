@@ -4,7 +4,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedGame, setEditedGame] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
-  const [deleteId, setDeleteId] = useState(null); // NEW: track the actual game ID
+  const [deleteId, setDeleteId] = useState(null); // track actual game ID
 
   const countSetWins = (sets) => {
     let team1Wins = 0;
@@ -40,16 +40,16 @@ function GameList({ games, onEditGame, onDeleteGame }) {
 
   const confirmDelete = (index, id) => {
     setDeleteIndex(index);
-    setDeleteId(id); // NEW: store the game ID too
+    setDeleteId(id);
   };
 
   const cancelDelete = () => {
     setDeleteIndex(null);
-    setDeleteId(null); // NEW: reset game ID
+    setDeleteId(null);
   };
 
   const handleDelete = () => {
-    onDeleteGame(deleteId); // FIXED: use ID instead of index-based lookup
+    onDeleteGame(deleteId);
     setDeleteIndex(null);
     setDeleteId(null);
   };
@@ -83,6 +83,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
                 </div>
               </div>
 
+              {/* Teams */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <h3 className="font-semibold mb-1">Team 1</h3>
@@ -92,7 +93,6 @@ function GameList({ games, onEditGame, onDeleteGame }) {
                     ))}
                   </ul>
                 </div>
-
                 <div>
                   <h3 className="font-semibold mb-1">Team 2</h3>
                   <ul className="list-disc list-inside text-gray-700">
@@ -103,6 +103,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
                 </div>
               </div>
 
+              {/* Set scores */}
               <div>
                 <h4 className="font-semibold mb-2">Set Scores</h4>
                 <div className="grid grid-cols-4 gap-4 text-center font-mono text-lg">
@@ -185,6 +186,7 @@ function GameList({ games, onEditGame, onDeleteGame }) {
                 </span>
               </div>
 
+              {/* Action buttons */}
               <div className="mt-4 flex gap-2">
                 {isEditing ? (
                   <>
