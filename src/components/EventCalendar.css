@@ -1,0 +1,8 @@
+.react-calendar__tile {
+  position: relative;
+}
+
+.react-calendar__tile div {
+  font-size: 0.7rem;
+  line-height: 1rem;
+}

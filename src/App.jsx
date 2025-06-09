@@ -111,7 +111,7 @@ function App({ currentPath }) {
   };
 
   if (!loggedInUser && currentPath !== "/signup") {
-    return <LoginForm loginPlayer={loginPlayer} navigate={navigate} />;
+    return <LoginForm loginPlayer={loginPlayer} registerPlayer={registerPlayer} navigate={navigate} />;
   }
 
   return (

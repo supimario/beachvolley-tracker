@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SignUpForm from "./SignUpForm";
 
-function LoginForm({ loginPlayer }) {
+function LoginForm({ loginPlayer, registerPlayer }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showSignUp, setShowSignUp] = useState(false);
@@ -17,21 +17,12 @@ function LoginForm({ loginPlayer }) {
   };
 
   const handleSignUp = (formData) => {
-  const existing = JSON.parse(localStorage.getItem("players") || "[]");
-
-  const alreadyExists = existing.some(p => p.email === formData.email);
-  if (alreadyExists) {
-    alert("A player with this email already exists.");
-    return;
-  }
-
-  const updatedPlayers = [...existing, formData];
-  localStorage.setItem("players", JSON.stringify(updatedPlayers));
-
-  alert("Signup successful! You can now log in.");
-  setShowSignUp(false);
-};
-
+    const success = registerPlayer(formData);
+    if (success) {
+      alert("Signup successful! You are now logged in.");
+      setShowSignUp(false);
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
