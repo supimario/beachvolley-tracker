@@ -12,7 +12,11 @@ function PlayerProfile({ players, games }) {
 
   const isPlayerInGame = (game) =>
     game.teams?.some((team) =>
-      team.some((p) => p.toLowerCase() === playerToShow.email.toLowerCase())
+      team.some(
+        (p) =>
+          p.toLowerCase() === playerToShow.email.toLowerCase() ||
+          p.toLowerCase() === playerToShow.name.toLowerCase()
+      )
     );
 
   const playerGames = games
@@ -20,18 +24,28 @@ function PlayerProfile({ players, games }) {
     .sort((a, b) => new Date(b.date) - new Date(a.date));
   const lastFiveGames = playerGames.slice(0, 5);
 
-  let wins = 0, losses = 0;
+  let wins = 0,
+    losses = 0;
 
   const getGameResult = (game) => {
-    let team1Wins = 0, team2Wins = 0;
+    let team1Wins = 0,
+      team2Wins = 0;
 
     game.sets.forEach(({ team1, team2 }) => {
       if (team1 > team2) team1Wins++;
       else if (team2 > team1) team2Wins++;
     });
 
-    const onTeam1 = game.teams[0].some((p) => p.includes(playerToShow.email));
-    const onTeam2 = game.teams[1].some((p) => p.includes(playerToShow.email));
+    const onTeam1 = game.teams[0].some(
+      (p) =>
+        p.toLowerCase() === playerToShow.email.toLowerCase() ||
+        p.toLowerCase() === playerToShow.name.toLowerCase()
+    );
+    const onTeam2 = game.teams[1].some(
+      (p) =>
+        p.toLowerCase() === playerToShow.email.toLowerCase() ||
+        p.toLowerCase() === playerToShow.name.toLowerCase()
+    );
 
     if (team1Wins === team2Wins) return "draw";
     return (onTeam1 && team1Wins > team2Wins) || (onTeam2 && team2Wins > team1Wins)
@@ -39,15 +53,23 @@ function PlayerProfile({ players, games }) {
       : "loss";
   };
 
-  const enrichedGames = playerGames.map((game) => {
+  const enrichedGames = playerGames.map((game, index) => {
     const result = getGameResult(game);
     if (result === "win") wins++;
     else if (result === "loss") losses++;
-    const opponentTeam = game.teams.find((team) => !team.some((p) => p.includes(playerToShow.email)));
+    const opponentTeam = game.teams.find(
+      (team) =>
+        !team.some(
+          (p) =>
+            p.toLowerCase() === playerToShow.email.toLowerCase() ||
+            p.toLowerCase() === playerToShow.name.toLowerCase()
+        )
+    );
     return {
       ...game,
       result,
       opponent: opponentTeam ? opponentTeam.join(", ") : "Unknown",
+      key: `${game.date}-${index}`,
     };
   });
 
@@ -76,10 +98,19 @@ function PlayerProfile({ players, games }) {
         className="w-24 h-24 rounded-full mb-4"
       />
 
-      <p><strong>Email:</strong> {playerToShow.email}</p>
-      <p><strong>Date of Birth:</strong> {playerToShow.dob || "N/A"}</p>
-      <p><strong>Age:</strong> {age}</p>
-      <p><strong>Height:</strong> {playerToShow.height ? `${playerToShow.height} cm` : "N/A"}</p>
+      <p>
+        <strong>Email:</strong> {playerToShow.email}
+      </p>
+      <p>
+        <strong>Date of Birth:</strong> {playerToShow.dob || "N/A"}
+      </p>
+      <p>
+        <strong>Age:</strong> {age}
+      </p>
+      <p>
+        <strong>Height:</strong>{" "}
+        {playerToShow.height ? `${playerToShow.height} cm` : "N/A"}
+      </p>
 
       <hr className="my-4" />
 
@@ -88,9 +119,10 @@ function PlayerProfile({ players, games }) {
         <p>No games found.</p>
       ) : (
         <ul className="mb-4">
-          {enrichedGames.slice(0, 5).map((game, index) => (
-            <li key={`${game.date}-${index}`}>
-              <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
+          {enrichedGames.slice(0, 5).map((game) => (
+            <li key={game.key}>
+              <strong>{new Date(game.date).toLocaleDateString()}</strong>:{" "}
+              {game.opponent} — {game.result}
             </li>
           ))}
         </ul>
@@ -133,9 +165,10 @@ function PlayerProfile({ players, games }) {
             <p>No games found.</p>
           ) : (
             <ul>
-              {enrichedGames.map((game, index) => (
-                <li key={`${game.date}-${index}`}>
-                  <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
+              {enrichedGames.map((game) => (
+                <li key={game.key}>
+                  <strong>{new Date(game.date).toLocaleDateString()}</strong>:{" "}
+                  {game.opponent} — {game.result}
                 </li>
               ))}
             </ul>
