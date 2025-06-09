@@ -13,11 +13,16 @@ function Players({ players, games }) {
     );
   }, [players, searchTerm]);
 
-  // Get last game played by player (by email)
+  // Get last game played by player (by email) — fixed to look into `teams`
   const getLastGame = (email) => {
     const playerGames = games
-      .filter((game) => game.players && game.players.includes(email))
+      .filter((game) =>
+        game.teams?.some((team) =>
+          team.some((p) => p?.toLowerCase() === email.toLowerCase())
+        )
+      )
       .sort((a, b) => new Date(b.date) - new Date(a.date));
+
     return playerGames.length > 0 ? playerGames[0] : null;
   };
 
@@ -56,14 +61,11 @@ function Players({ players, games }) {
                 }}
               >
                 <strong>{player.name}</strong> ({player.email})<br />
-                Last Game:{" "}
-                {lastGame ? (
-                  <>
-                    <span>{new Date(lastGame.date).toLocaleDateString()}</span>{" "}
-                    - <span>{lastGame.result || "Result N/A"}</span>
-                  </>
-                ) : (
-                  <span>No games played yet</span>
+                {lastGame && (
+                  <div>
+                    Last Game:{" "}
+                    <span>{new Date(lastGame.date).toLocaleDateString()}</span>
+                  </div>
                 )}
               </li>
             );
