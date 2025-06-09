@@ -1,115 +1,173 @@
-import React from "react";
-import { useParams, Link } from "react-router-dom";
-import { getGamesForPlayer } from "../utils/gameUtils";
-import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
-const COLORS = ["#4CAF50", "#F44336"];
+function PlayerProfile({ players, games }) {
+  const { email: playerEmail } = useParams();
+  const [showAllGames, setShowAllGames] = useState(false);
+  const navigate = useNavigate();
 
-const PlayerProfile = ({ players, games }) => {
-  const { email } = useParams();
-  const player = players.find((p) => p.email === email);
+  const playerToShow = players.find((p) => p.email === playerEmail);
+  if (!playerToShow) return <p>Player not found.</p>;
 
-  if (!player) return <p>Player not found</p>;
-
-  // Find games where player is in either team
-  const playerGames = games
-    .filter((game) =>
-      game.teams.some((team) => team.includes(email))
-    )
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  const lastFiveGames = playerGames.slice(0, 5);
-
-  // Count wins and losses
-  let wins = 0, losses = 0;
-
-  playerGames.forEach((game) => {
-    const { team1Wins, team2Wins } = game.sets.reduce(
-      (acc, set) => {
-        if (set.team1 > set.team2) acc.team1Wins++;
-        else if (set.team2 > set.team1) acc.team2Wins++;
-        return acc;
-      },
-      { team1Wins: 0, team2Wins: 0 }
+  const isPlayerInGame = (game) =>
+    game.teams?.some((team) =>
+      team.some((p) =>
+        // allow matches on username or email
+        p.toLowerCase().includes(playerToShow.email.toLowerCase()) ||
+        p.toLowerCase().includes(playerToShow.name.toLowerCase()) ||
+        p.toLowerCase().includes(playerToShow.name.split(" ")[0].toLowerCase()) // e.g., just "Mario"
+      )
     );
 
-    const playerOnTeam1 = game.teams[0].includes(email);
-    const playerOnTeam2 = game.teams[1].includes(email);
+  const playerGames = games
+    .filter(isPlayerInGame)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const lastFiveGames = playerGames.slice(0, 5);
 
-    if ((team1Wins > team2Wins && playerOnTeam1) || (team2Wins > team1Wins && playerOnTeam2)) {
-      wins++;
-    } else {
-      losses++;
-    }
+  let wins = 0, losses = 0;
+
+  const getGameResult = (game) => {
+    let team1Wins = 0, team2Wins = 0;
+
+    game.sets.forEach(({ team1, team2 }) => {
+      if (team1 > team2) team1Wins++;
+      else if (team2 > team1) team2Wins++;
+    });
+
+    const onTeam1 = game.teams[0].some((p) =>
+      p.includes(playerToShow.email) || p.includes(playerToShow.name)
+    );
+    const onTeam2 = game.teams[1].some((p) =>
+      p.includes(playerToShow.email) || p.includes(playerToShow.name)
+    );
+
+    if (team1Wins === team2Wins) return "draw";
+    return (onTeam1 && team1Wins > team2Wins) || (onTeam2 && team2Wins > team1Wins)
+      ? "win"
+      : "loss";
+  };
+
+  const enrichedGames = playerGames.map((game, index) => {
+    const result = getGameResult(game);
+    if (result === "win") wins++;
+    else if (result === "loss") losses++;
+    const opponentTeam = game.teams.find(
+      (team) => !team.some((p) => p.includes(playerToShow.email) || p.includes(playerToShow.name))
+    );
+    return {
+      ...game,
+      result,
+      opponent: opponentTeam ? opponentTeam.join(", ") : "Unknown",
+      _key: `${game.date}-${index}`, // ensure uniqueness
+    };
   });
 
   const pieData = [
-    { name: "Wins", value: wins },
-    { name: "Losses", value: losses },
-  ];
+    { name: "Wins", value: wins, color: "#4caf50" },
+    { name: "Losses", value: losses, color: "#f44336" },
+  ].filter((entry) => entry.value > 0);
+
+  const calculateAge = (dobStr) => {
+    if (!dobStr) return "N/A";
+    const dob = new Date(dobStr);
+    const diffMs = Date.now() - dob.getTime();
+    const ageDt = new Date(diffMs);
+    return Math.abs(ageDt.getUTCFullYear() - 1970);
+  };
+
+  const age = calculateAge(playerToShow.dob);
+  const totalGames = wins + losses;
+  const winRate = totalGames ? Math.round((wins / totalGames) * 100) : 0;
 
   return (
-    <div>
-      <h2>{player.name}’s Profile</h2>
+    <div className="profile-page max-w-3xl mx-auto p-4 bg-white rounded shadow">
+      <button
+        onClick={() => navigate("/players")}
+        className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+      >
+        ← Back to Players
+      </button>
+
+      <h1 className="text-3xl font-bold mb-4">{playerToShow.name}'s Profile</h1>
 
       <img
-        src={player.avatarUrl || "/default-avatar.jpg"}
+        src={playerToShow.avatarUrl || "/default-avatar.jpg"}
         alt="User Avatar"
-        style={{ width: "100px", height: "100px", borderRadius: "50%" }}
+        className="w-24 h-24 rounded-full mb-4"
       />
 
-      <h3>Overall Performance</h3>
-      <PieChart width={300} height={250}>
-        <Pie
-          data={pieData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          label={({ name, percent }) =>
-            `${name}: ${(percent * 100).toFixed(0)}%`
-          }
-          outerRadius={80}
-          dataKey="value"
-        >
-          {pieData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index]} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
+      <p><strong>Email:</strong> {playerToShow.email}</p>
+      <p><strong>Date of Birth:</strong> {playerToShow.dob || "N/A"}</p>
+      <p><strong>Age:</strong> {age}</p>
+      <p><strong>Height:</strong> {playerToShow.height ? `${playerToShow.height} cm` : "N/A"}</p>
 
-      <h3>Recent Games</h3>
+      <hr className="my-4" />
+
+      <h2 className="text-2xl font-semibold mb-2">Last 5 Games</h2>
       {lastFiveGames.length === 0 ? (
-        <p>No games found for this player.</p>
+        <p>No games found.</p>
       ) : (
-        <ul>
-          {lastFiveGames.map((game, i) => (
-            <li key={i}>
-              {new Date(game.date).toLocaleDateString()} - vs.{" "}
-              {game.teams[0].includes(email)
-                ? game.teams[1].join(", ")
-                : game.teams[0].join(", ")}
+        <ul className="mb-4">
+          {enrichedGames.slice(0, 5).map((game) => (
+            <li key={game._key}>
+              <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
             </li>
           ))}
         </ul>
       )}
 
-      <h3>All Games</h3>
-      {playerGames.length === 0 ? (
-        <p>No game history available.</p>
+      <h2 className="text-2xl font-semibold mb-2">Overall Performance</h2>
+      <p><strong>Total Games:</strong> {totalGames}</p>
+      <p><strong>Win Rate:</strong> {winRate}%</p>
+
+      {pieData.length === 0 ? (
+        <p>No game results to display.</p>
       ) : (
-        <ul>
-          {playerGames.map((game, i) => (
-            <li key={i}>
-              {new Date(game.date).toLocaleDateString()} -{" "}
-              {game.teams[0].join(" & ")} vs. {game.teams[1].join(" & ")}
-            </li>
-          ))}
-        </ul>
+        <PieChart width={300} height={300}>
+          <Pie
+            data={pieData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            label
+          >
+            {pieData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      )}
+
+      <button
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        onClick={() => setShowAllGames((prev) => !prev)}
+      >
+        {showAllGames ? "Hide Game History" : "Show Full Game History"}
+      </button>
+
+      {showAllGames && (
+        <>
+          <h2 className="text-2xl font-semibold mt-6 mb-2">Full Game History</h2>
+          {enrichedGames.length === 0 ? (
+            <p>No games found.</p>
+          ) : (
+            <ul>
+              {enrichedGames.map((game) => (
+                <li key={game._key}>
+                  <strong>{new Date(game.date).toLocaleDateString()}</strong>: {game.opponent} — {game.result}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
-};
+}
 
 export default PlayerProfile;
