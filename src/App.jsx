@@ -24,6 +24,7 @@ function App({ currentPath }) {
     return saved ? JSON.parse(saved) : [];
   });
   const [loggedInUser, setLoggedInUser] = useState(() => {
+    console.log("Loaded games from localStorage:", localStorage.getItem("games"));
     const savedUser = localStorage.getItem("loggedInUser");
     return savedUser ? JSON.parse(savedUser) : null;
   });
@@ -83,7 +84,12 @@ function App({ currentPath }) {
   };
 
   const addGame = (newGame) => {
-    setGames((prev) => [...prev, newGame]);
+  setGames((prev) => {
+    const updated = [...prev, newGame];
+    localStorage.setItem("games", JSON.stringify(updated)); // Persist to localStorage
+    console.log("Saved games to localStorage:", updated);
+    return updated;
+    });
   };
 
   const deleteGame = (gameId) => {

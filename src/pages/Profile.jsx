@@ -13,7 +13,9 @@ function Profile({ loggedInUser, players, games }) {
   if (!playerToShow) return <p>Player not found.</p>;
 
   const isPlayerInGame = (game) =>
-    game.teams?.some((team) => team.some((p) => p.includes(playerToShow.email)));
+  game.teams?.some((team) =>
+    team.some((p) => p.toLowerCase() === playerToShow.email.toLowerCase())
+  );
 
  const playerGames = games
   .filter(isPlayerInGame)
@@ -22,6 +24,8 @@ function Profile({ loggedInUser, players, games }) {
 
  console.log("Profile re-rendered", games.length);
  console.log("Filtered games for player:", playerToShow.email, playerGames);
+ console.log("All games:", games);
+ console.log("Teams in all games:", games.map((g) => g.teams));
 
   let wins = 0, losses = 0;
 
