@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// Updated Profile.jsx with all improvements
+import React, { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
@@ -13,19 +14,17 @@ function Profile({ loggedInUser, players, games }) {
   if (!playerToShow) return <p>Player not found.</p>;
 
   const isPlayerInGame = (game) =>
-  game.teams?.some((team) =>
-    team.some((p) => p.toLowerCase() === playerToShow.email.toLowerCase())
-  );
+    game.teams?.some((team) =>
+      team.some((p) => p.toLowerCase() === playerToShow.name.toLowerCase())
+    );
 
- const playerGames = games
-  .filter(isPlayerInGame)
-  .sort((a, b) => new Date(b.date) - new Date(a.date));
- const lastFiveGames = playerGames.slice(0, 5);
+  const playerGames = useMemo(() => {
+    return games
+      .filter(isPlayerInGame)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [games, playerToShow]);
 
- console.log("Profile re-rendered", games.length);
- console.log("Filtered games for player:", playerToShow.email, playerGames);
- console.log("All games:", games);
- console.log("Teams in all games:", games.map((g) => g.teams));
+  const lastFiveGames = playerGames.slice(0, 5);
 
   let wins = 0, losses = 0;
 
@@ -37,8 +36,8 @@ function Profile({ loggedInUser, players, games }) {
       else if (team2 > team1) team2Wins++;
     });
 
-    const onTeam1 = game.teams[0].some((p) => p.includes(playerToShow.email));
-    const onTeam2 = game.teams[1].some((p) => p.includes(playerToShow.email));
+    const onTeam1 = game.teams[0].some((p) => p === playerToShow.name);
+    const onTeam2 = game.teams[1].some((p) => p === playerToShow.name);
 
     if (team1Wins === team2Wins) return "draw";
     return (onTeam1 && team1Wins > team2Wins) || (onTeam2 && team2Wins > team1Wins)
@@ -50,7 +49,9 @@ function Profile({ loggedInUser, players, games }) {
     const result = getGameResult(game);
     if (result === "win") wins++;
     else if (result === "loss") losses++;
-    const opponentTeam = game.teams.find((team) => !team.some((p) => p.includes(playerToShow.email)));
+    const opponentTeam = game.teams.find(
+      (team) => !team.some((p) => p === playerToShow.name)
+    );
     return {
       ...game,
       result,
