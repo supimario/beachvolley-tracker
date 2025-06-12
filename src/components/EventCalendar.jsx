@@ -12,8 +12,9 @@ const EventCalendar = () => {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [notes, setNotes] = useState("");
+  const [location, setLocation] = useState(""); // New state
   const [filter, setFilter] = useState("All");
-  const [editingId, setEditingId] = useState(null); // ← NEW
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("calendarEvents", JSON.stringify(events));
@@ -25,149 +26,107 @@ const EventCalendar = () => {
     setStart("");
     setEnd("");
     setNotes("");
+    setLocation(""); // Reset location
     setEditingId(null);
+  };
+
+  const handleStartChange = (e) => {
+    const newStart = e.target.value;
+    setStart(newStart);
+    if (!end) setEnd(newStart); // Auto-fill end date
   };
 
   const addOrUpdateEvent = (e) => {
     e.preventDefault();
     if (!title || !start || !end) return alert("Please fill in all required fields");
 
-    const updatedEvent = {
-      id: editingId ?? Date.now(),
+    const newEvent = {
+      id: editingId || Date.now(),
       title,
       type,
       start,
       end,
       notes,
+      location, // Include location
     };
 
-    if (editingId) {
-      setEvents(events.map((ev) => (ev.id === editingId ? updatedEvent : ev)));
-    } else {
-      setEvents([...events, updatedEvent]);
-    }
+    const updatedEvents = editingId
+      ? events.map((ev) => (ev.id === editingId ? newEvent : ev))
+      : [...events, newEvent];
 
+    setEvents(updatedEvents);
     resetForm();
   };
 
-  const handleEdit = (event) => {
+  const deleteEvent = (id) => {
+    setEvents(events.filter((event) => event.id !== id));
+  };
+
+  const editEvent = (event) => {
     setTitle(event.title);
     setType(event.type);
     setStart(event.start);
     setEnd(event.end);
     setNotes(event.notes);
+    setLocation(event.location || ""); // Load location
     setEditingId(event.id);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this event?")) {
-      setEvents(events.filter((e) => e.id !== id));
-      if (editingId === id) resetForm();
-    }
   };
 
   const filteredEvents = filter === "All" ? events : events.filter((e) => e.type === filter);
 
   return (
-    <div className="mt-6 border rounded-lg p-4 shadow">
-      <h2 className="text-xl font-bold mb-2">📅 Calendar</h2>
-
-      <form onSubmit={addOrUpdateEvent} className="space-y-2">
-        <input
-          type="text"
-          placeholder="Event title"
-          className="w-full p-2 border rounded"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <div className="flex flex-wrap gap-2">
-          <select
-            className="flex-1 min-w-[130px] p-2 border rounded"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
+    <div>
+      <form onSubmit={addOrUpdateEvent}>
+        <label>
+          Title:
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label>
+          Type:
+          <select value={type} onChange={(e) => setType(e.target.value)}>
             <option value="Practice">Practice</option>
+            <option value="Match">Match</option>
             <option value="Tournament">Tournament</option>
           </select>
-          <input
-            type="date"
-            className="flex-1 min-w-[130px] p-2 border rounded"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-            required
-          />
-          <input
-            type="date"
-            className="flex-1 min-w-[130px] p-2 border rounded"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
-            required
-          />
-        </div>
-        <textarea
-          placeholder="Notes (optional)"
-          className="w-full p-2 border rounded"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        ></textarea>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            {editingId ? "Update Event" : "Add Event"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              onClick={resetForm}
-            >
-              Cancel
-            </button>
-          )}
-        </div>
+        </label>
+        <label>
+          Start:
+          <input type="date" value={start} onChange={handleStartChange} />
+        </label>
+        <label>
+          End:
+          <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </label>
+        <label>
+          Location:
+          <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} />
+        </label>
+        <label>
+          Notes:
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </label>
+        <button type="submit">{editingId ? "Update" : "Add"} Event</button>
       </form>
 
-      <div className="mt-4">
-        <label className="mr-2 font-semibold">Filter:</label>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border p-1 rounded"
-        >
+      <div>
+        <label>Filter by type:</label>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="All">All</option>
           <option value="Practice">Practice</option>
+          <option value="Match">Match</option>
           <option value="Tournament">Tournament</option>
         </select>
       </div>
 
-      <ul className="mt-4 space-y-2">
-        {filteredEvents.length === 0 && <p className="text-gray-500">No events</p>}
-        {filteredEvents.map((e) => (
-          <li key={e.id} className="border rounded p-2 bg-gray-50 flex justify-between items-start">
-            <div>
-              <div className="font-semibold">{e.title}</div>
-              <div className="text-sm text-gray-700">
-                {e.type} — {e.start} to {e.end}
-              </div>
-              {e.notes && <div className="text-sm mt-1 italic">{e.notes}</div>}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(e)}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(e.id)}
-                className="text-red-600 hover:underline text-sm"
-              >
-                Delete
-              </button>
-            </div>
+      <ul>
+        {filteredEvents.map((event) => (
+          <li key={event.id}>
+            <strong>{event.title}</strong> ({event.type})<br />
+            {event.start} to {event.end}<br />
+            📍 {event.location || "No location"}<br />
+            📝 {event.notes}<br />
+            <button onClick={() => editEvent(event)}>Edit</button>
+            <button onClick={() => deleteEvent(event.id)}>Delete</button>
           </li>
         ))}
       </ul>
