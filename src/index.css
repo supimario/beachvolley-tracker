@@ -1,35 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html, body {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f9fafb;
+  @apply font-body bg-sand text-ocean;
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  scroll-behavior: smooth;
 }
 
 a {
-  color: #3b82f6; /* Tailwind blue-500 */
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
+  @apply text-coral hover:underline;
 }
 
 button {
   cursor: pointer;
+  @apply bg-seafoam text-ocean rounded-full px-4 py-2 font-semibold shadow hover:bg-sunset transition;
 }
 
-/* Scrollbar styling for better UX */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
 ::-webkit-scrollbar-thumb {
-  background-color: #a78bfa; /* Tailwind purple-400 */
-  border-radius: 4px;
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+
+h1, h2, h3, h4 {
+  @apply font-heading text-ocean;
 }
