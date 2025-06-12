@@ -1,18 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const teamOptions = [
-  "2v2",
-  "2v3",
-  "3v3",
-  "3v4",
-  "4v4",
-  "4v5",
-  "5v5",
-  "5v6",
-  "6v6",
+  "2v2", "2v3", "3v3", "3v4", "4v4", "4v5", "5v5", "5v6", "6v6"
 ];
 
-// Helper: get number of players per team from option string
 const getTeamSizes = (option) => {
   const parts = option.split("v");
   return [+parts[0], +parts[1]];
@@ -31,7 +22,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
     { team1: 0, team2: 0 },
   ]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const [t1, t2] = getTeamSizes(teamCombo);
     setManualTeam1(Array(t1).fill(""));
     setManualTeam2(Array(t2).fill(""));
@@ -86,20 +77,25 @@ export default function GameForm({ players, addGame, loggedInUser }) {
       }
     }
 
-    const team1Final = team1Players.map((p, i) => manualTeam1[i].trim() || p);
-    const team2Final = team2Players.map((p, i) => manualTeam2[i].trim() || p);
+    // Final team arrays with emails or manual names
+    const team1Final = team1Players.map((email, i) => {
+      if (manualTeam1[i].trim()) return manualTeam1[i].trim();
+      const match = players.find(p => p.email === email);
+      return match ? match.email : email;
+    });
 
-    if (team1Final.some((p) => !p)) {
-      alert("All Team 1 players must have a name");
+    const team2Final = team2Players.map((email, i) => {
+      if (manualTeam2[i].trim()) return manualTeam2[i].trim();
+      const match = players.find(p => p.email === email);
+      return match ? match.email : email;
+    });
+
+    if (team1Final.some(p => !p) || team2Final.some(p => !p)) {
+      alert("All players must have a name or be selected.");
       return;
     }
-    if (team2Final.some((p) => !p)) {
-      alert("All Team 2 players must have a name");
-      return;
-    }
 
-    let team1SetsWon = 0,
-      team2SetsWon = 0;
+    let team1SetsWon = 0, team2SetsWon = 0;
     for (const set of sets) {
       if (set.team1 === 0 && set.team2 === 0) continue;
       if (set.team1 === set.team2) {
@@ -109,17 +105,16 @@ export default function GameForm({ players, addGame, loggedInUser }) {
       if (set.team1 > set.team2) team1SetsWon++;
       else team2SetsWon++;
     }
+
     if (team1SetsWon < 2 && team2SetsWon < 2) {
       alert("A team must win at least 2 sets to win the game");
       return;
     }
 
-    const filteredSets = sets.filter(
-      (set) => set.team1 !== 0 || set.team2 !== 0
-    );
+    const filteredSets = sets.filter(set => set.team1 !== 0 || set.team2 !== 0);
 
     const newGame = {
-      id: Date.now(), // ✅ Unique ID to avoid deleting all games by date
+      id: Date.now(),
       date,
       teams: [team1Final, team2Final],
       sets: filteredSets,
@@ -129,6 +124,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
 
     addGame(newGame);
 
+    // Reset form
     setTeamCombo(teamOptions[0]);
     setManualTeam1([]);
     setManualTeam2([]);
@@ -143,19 +139,16 @@ export default function GameForm({ players, addGame, loggedInUser }) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mb-8 p-4 bg-white rounded shadow max-w-3xl mx-auto"
-    >
+    <form onSubmit={handleSubmit} className="mb-8 p-4 bg-white rounded shadow max-w-3xl mx-auto">
       <h2 className="text-xl font-bold mb-4">Add New Game</h2>
 
       <label className="block mb-3">
-        Date:{" "}
+        Date:
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="border rounded px-2 py-1"
+          className="border rounded px-2 py-1 ml-2"
           required
         />
       </label>
@@ -167,68 +160,39 @@ export default function GameForm({ players, addGame, loggedInUser }) {
           value={teamCombo}
           onChange={(e) => setTeamCombo(e.target.value)}
         >
-          {teamOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
+          {teamOptions.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
       </label>
 
       <div className="grid grid-cols-2 gap-8 mb-4">
-        <div>
-          <h3 className="font-semibold mb-2 text-blue-700">Team 1 Players</h3>
-          {team1Players.map((selected, i) => (
-            <div key={i} className="flex gap-2 mb-2 items-center">
-              <select
-                value={selected || ""}
-                onChange={(e) => handlePlayerSelect(1, i, e.target.value)}
-                className="border rounded px-2 py-1 flex-grow"
-              >
-                <option value="">-- Select Player --</option>
-                {players.map((p) => (
-                  <option key={p.email} value={p.name}>
-                    {p.name} ({p.email})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="Or enter name"
-                value={manualTeam1[i] || ""}
-                onChange={(e) => handleManualChange(1, i, e.target.value)}
-                className="border rounded px-2 py-1 flex-grow"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <h3 className="font-semibold mb-2 text-red-700">Team 2 Players</h3>
-          {team2Players.map((selected, i) => (
-            <div key={i} className="flex gap-2 mb-2 items-center">
-              <select
-                value={selected || ""}
-                onChange={(e) => handlePlayerSelect(2, i, e.target.value)}
-                className="border rounded px-2 py-1 flex-grow"
-              >
-                <option value="">-- Select Player --</option>
-                {players.map((p) => (
-                  <option key={p.email} value={p.name}>
-                    {p.name} ({p.email})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="Or enter name"
-                value={manualTeam2[i] || ""}
-                onChange={(e) => handleManualChange(2, i, e.target.value)}
-                className="border rounded px-2 py-1 flex-grow"
-              />
-            </div>
-          ))}
-        </div>
+        {[{ label: "Team 1", players: team1Players, manual: manualTeam1, team: 1 },
+          { label: "Team 2", players: team2Players, manual: manualTeam2, team: 2 }]
+          .map(({ label, players, manual, team }) => (
+          <div key={label}>
+            <h3 className={`font-semibold mb-2 ${team === 1 ? "text-blue-700" : "text-red-700"}`}>{label} Players</h3>
+            {players.map((selected, i) => (
+              <div key={i} className="flex gap-2 mb-2 items-center">
+                <select
+                  value={selected || ""}
+                  onChange={(e) => handlePlayerSelect(team, i, e.target.value)}
+                  className="border rounded px-2 py-1 flex-grow"
+                >
+                  <option value="">-- Select Player --</option>
+                  {playersList(players)}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or enter name"
+                  value={manual[i] || ""}
+                  onChange={(e) => handleManualChange(team, i, e.target.value)}
+                  className="border rounded px-2 py-1 flex-grow"
+                />
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
       <div className="mb-4">
@@ -241,9 +205,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
               min={0}
               max={30}
               value={sets[setIdx].team1}
-              onChange={(e) =>
-                handleSetScoreChange(setIdx, 1, e.target.value)
-              }
+              onChange={(e) => handleSetScoreChange(setIdx, 1, e.target.value)}
               className="w-16 border rounded px-2 py-1 text-center"
               required={setIdx === 0}
             />
@@ -253,9 +215,7 @@ export default function GameForm({ players, addGame, loggedInUser }) {
               min={0}
               max={30}
               value={sets[setIdx].team2}
-              onChange={(e) =>
-                handleSetScoreChange(setIdx, 2, e.target.value)
-              }
+              onChange={(e) => handleSetScoreChange(setIdx, 2, e.target.value)}
               className="w-16 border rounded px-2 py-1 text-center"
               required={setIdx === 0}
             />
@@ -263,12 +223,17 @@ export default function GameForm({ players, addGame, loggedInUser }) {
         ))}
       </div>
 
-      <button
-        type="submit"
-        className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
-      >
+      <button type="submit" className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700">
         Add Game
       </button>
     </form>
   );
+}
+
+function playersList(players) {
+  return players.map((p) => (
+    <option key={p.email} value={p.email}>
+      {p.name} ({p.email})
+    </option>
+  ));
 }

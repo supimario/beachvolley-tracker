@@ -1,120 +1,175 @@
-import React, { useState, useMemo } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line,
-} from "recharts";
+import React, { useMemo, useState } from "react";
 
-function Stats({ players = [], games = [] }) {
-  const [primaryPlayer, setPrimary] = useState("");
-  const [comparePlayer, setCompare] = useState("");
-  const seasons = useMemo(
-    () => Array.from(new Set(games.map(g => new Date(g.date).getFullYear()))).sort(),
-    [games]
-  );
-  const [season, setSeason] = useState(seasons[0] || new Date().getFullYear());
+export default function Stats({ games, loggedInUser }) {
+  const [showCurrentSeason, setShowCurrentSeason] = useState(true);
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
 
-  const seasonGames = useMemo(
-    () => games.filter(g => new Date(g.date).getFullYear() === season),
-    [games, season]
-  );
-
-  const compute = (email) => {
-    const relevant = seasonGames.filter(g =>
-      g.team1.some(p => p.email === email) || g.team2.some(p => p.email === email)
-    );
-    let wins = 0, losses = 0, pf = 0, pa = 0;
-    const teammate = {}, opponent = {};
-    const byMonth = {};
-
-    relevant.forEach(g => {
-      const isT1 = g.team1.some(p => p.email === email);
-      const myTeam = isT1 ? g.team1 : g.team2;
-      const oppTeam = isT1 ? g.team2 : g.team1;
-      const myScore = isT1 ? g.score1 : g.score2;
-      const oppScore = isT1 ? g.score2 : g.score1;
-
-      if (myScore > oppScore) wins++; else losses++;
-      pf += myScore; pa += oppScore;
-
-      myTeam.forEach(p => {
-        if (p.email !== email) {
-          teammate[p.email] = (teammate[p.email] || 0) + (myScore > oppScore ? 1 : 0);
-        }
-      });
-      oppTeam.forEach(p => {
-        opponent[p.email] = (opponent[p.email] || 0) + 1;
-      });
-
-      const m = new Date(g.date).getMonth();
-      byMonth[m] = (byMonth[m] || 0) + 1;
-    });
-
-    const bestMate = Object.entries(teammate).sort((a,b)=>b[1]-a[1])[0] || [];
-    const chart = Object.entries(byMonth).map(([m,c]) => ({ month: parseInt(m)+1, games: c }));
-
-    return {
-      total: wins+losses, wins, losses,
-      winRate: total?((wins/(wins+losses))*100).toFixed(1):0,
-      pf, pa,
-      bestMateEmail: bestMate[0], bestMateWins: bestMate[1],
-      opponentCount: opponent,
-      chart,
-    };
+  const isCurrentSeason = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear();
   };
 
-  const p1Stats = primaryPlayer ? compute(primaryPlayer) : null;
-  const p2Stats = comparePlayer ? compute(comparePlayer) : null;
+  const filteredGames = useMemo(
+    () => games.filter((g) => !showCurrentSeason || isCurrentSeason(g.date)),
+    [games, showCurrentSeason]
+  );
+
+  const allPlayers = useMemo(() => {
+    const players = new Set();
+    filteredGames.forEach((g) => {
+      g.teams.flat().forEach((p) => players.add(p));
+    });
+    return Array.from(players);
+  }, [filteredGames]);
+
+  const playerStats = useMemo(() => {
+    const stats = {};
+    allPlayers.forEach((p) => {
+      stats[p] = { wins: 0, losses: 0, setsWon: 0, setsLost: 0, teammates: {} };
+    });
+
+    filteredGames.forEach((g) => {
+      const [team1, team2] = g.teams;
+      let team1Sets = 0,
+        team2Sets = 0;
+      g.sets.forEach((s) => {
+        if (s.team1 > s.team2) team1Sets++;
+        else if (s.team2 > s.team1) team2Sets++;
+      });
+
+      const team1Won = team1Sets > team2Sets;
+      const team2Won = team2Sets > team1Sets;
+
+      team1.forEach((p) => {
+        if (!stats[p]) return;
+        stats[p].setsWon += team1Sets;
+        stats[p].setsLost += team2Sets;
+        if (team1Won) stats[p].wins++;
+        else if (team2Won) stats[p].losses++;
+        team1.forEach((mate) => {
+          if (mate !== p) {
+            stats[p].teammates[mate] = (stats[p].teammates[mate] || 0) + 1;
+          }
+        });
+      });
+
+      team2.forEach((p) => {
+        if (!stats[p]) return;
+        stats[p].setsWon += team2Sets;
+        stats[p].setsLost += team1Sets;
+        if (team2Won) stats[p].wins++;
+        else if (team1Won) stats[p].losses++;
+        team2.forEach((mate) => {
+          if (mate !== p) {
+            stats[p].teammates[mate] = (stats[p].teammates[mate] || 0) + 1;
+          }
+        });
+      });
+    });
+
+    return stats;
+  }, [filteredGames, allPlayers]);
+
+  const mostUsedTeamCombo = useMemo(() => {
+    const comboCounts = {};
+    filteredGames.forEach((g) => {
+      const combo = `${g.teams[0].length}v${g.teams[1].length}`;
+      comboCounts[combo] = (comboCounts[combo] || 0) + 1;
+    });
+    return Object.entries(comboCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  }, [filteredGames]);
+
+  const totalGames = filteredGames.length;
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex gap-4">
-        <select value={season} onChange={e=>setSeason(+e.target.value)}>
-          {seasons.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        {[primaryPlayer, comparePlayer].map((sel, idx) => (
-          <select key={idx} value={sel} onChange={e=>idx?setCompare(e.target.value):setPrimary(e.target.value)}>
-            <option value="">Select player...</option>
-            {players.map(p => <option key={p.email} value={p.email}>{p.name}</option>)}
-          </select>
-        ))}
-      </div>
+    <div className="max-w-4xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Statistics</h2>
 
-      {/* Summary Charts */}
-      {[{stats:p1Stats, name:"Primary"}, {stats:p2Stats, name:"Compare"}].map((u, i) => u.stats && (
-        <div key={i} className="p-4 border rounded">
-          <h2>{i? "Comparison":"Player"}: {players.find(p=>p.email==(i?comparePlayer:primaryPlayer))?.name}</h2>
-          <p>Games: {u.stats.total}</p>
-          <p>Wins/Losses: {u.stats.wins}/{u.stats.losses}</p>
-          <p>Win Rate: {u.stats.winRate}%</p>
-          <p>Points For/Against: {u.stats.pf}/{u.stats.pa}</p>
+      <label className="block mb-4">
+        <input
+          type="checkbox"
+          checked={showCurrentSeason}
+          onChange={() => setShowCurrentSeason((prev) => !prev)}
+        />
+        <span className="ml-2">Show Only Current Season</span>
+      </label>
 
-          {/* Best Teammate */}
-          {u.stats.bestMateEmail && (
-            <p>Best teammate: {players.find(p=>p.email===u.stats.bestMateEmail)?.name} ({u.stats.bestMateWins} wins)</p>
+      <label className="block mt-4">
+        Player vs Player:
+        <select
+          value={selectedPlayers.join(",")}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (!val) {
+              setSelectedPlayers([]);
+              return;
+            }
+            const [p1, p2] = val.split(",");
+            setSelectedPlayers([p1, p2]);
+          }}
+          className="ml-2 border rounded px-2 py-1"
+        >
+          <option value="">-- Select Two Players --</option>
+          {allPlayers.flatMap((p1, i) =>
+            allPlayers.slice(i + 1).map((p2) => (
+              <option key={`${p1}-${p2}`} value={`${p1},${p2}`}>
+                {p1} vs {p2}
+              </option>
+            ))
           )}
+        </select>
+      </label>
 
-          {/* Month Chart */}
-          <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={u.stats.chart}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Line dataKey="games" stroke={i?"#f59e0b":"#3b82f6"} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      ))}
-
-      {/* Comparison Table if both players selected */}
-      {p1Stats && p2Stats && (
-        <div className="p-4 border rounded">
-          <h3>Head-to-Head</h3>
-          <p>{players.find(p=>p.email===primaryPlayer).name} played { (p1Stats.opponentCount[comparePlayer]||0)} games vs {players.find(p=>p.email===comparePlayer)?.name}</p>
+      {selectedPlayers.length === 2 && (
+        <div className="mt-4 border p-4 rounded bg-gray-100">
+          <h3 className="font-semibold mb-2">
+            Head to Head: {selectedPlayers[0]} vs {selectedPlayers[1]}
+          </h3>
+          <ul className="list-disc list-inside">
+            {filteredGames
+              .filter(
+                (g) =>
+                  g.teams.flat().includes(selectedPlayers[0]) &&
+                  g.teams.flat().includes(selectedPlayers[1])
+              )
+              .map((g) => (
+                <li key={g.id}>
+                  {g.date}: {g.teams[0].join(", ")} vs{" "}
+                  {g.teams[1].join(", ")} – Sets:{" "}
+                  {g.sets.map((s) => `${s.team1}-${s.team2}`).join(", ")}
+                </li>
+              ))}
+          </ul>
         </div>
       )}
+
+      <div className="mt-8">
+        <h3 className="font-semibold text-lg mb-2">General Stats</h3>
+        <p>Total Games: {totalGames}</p>
+        <p>Most Used Team Combination: {mostUsedTeamCombo || "N/A"}</p>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="font-semibold text-lg mb-2">Players</h3>
+        {allPlayers.map((p) => (
+          <div key={p} className="border-b py-2">
+            <h4 className="font-semibold">{p}</h4>
+            <p>
+              Wins: {playerStats[p].wins}, Losses: {playerStats[p].losses},
+              Sets: {playerStats[p].setsWon}–{playerStats[p].setsLost}
+            </p>
+            <p>
+              Frequent Teammates:{" "}
+              {Object.entries(playerStats[p].teammates)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([mate, count]) => `${mate} (${count})`)
+                .join(", ") || "None"}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-export default Stats;
