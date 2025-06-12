@@ -2,7 +2,21 @@ import React, { useState, useEffect } from "react";
 
 const getInitialEvents = () => {
   const saved = localStorage.getItem("calendarEvents");
-  return saved ? JSON.parse(saved) : [];
+  if (!saved) return [];
+
+  const events = JSON.parse(saved);
+
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  // Remove events older than 1 year
+  const recentEvents = events.filter((e) => {
+    const endDate = new Date(e.end || e.start);
+    return endDate >= oneYearAgo;
+  });
+
+  localStorage.setItem("calendarEvents", JSON.stringify(recentEvents));
+  return recentEvents;
 };
 
 const EventCalendar = () => {
@@ -12,7 +26,8 @@ const EventCalendar = () => {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [notes, setNotes] = useState("");
-  const [location, setLocation] = useState(""); // New state
+  const [location, setLocation] = useState("");
+  const [link, setLink] = useState(""); // New: link field
   const [filter, setFilter] = useState("All");
   const [editingId, setEditingId] = useState(null);
 
@@ -26,14 +41,15 @@ const EventCalendar = () => {
     setStart("");
     setEnd("");
     setNotes("");
-    setLocation(""); // Reset location
+    setLocation("");
+    setLink(""); // Reset link
     setEditingId(null);
   };
 
   const handleStartChange = (e) => {
     const newStart = e.target.value;
     setStart(newStart);
-    if (!end) setEnd(newStart); // Auto-fill end date
+    if (!end) setEnd(newStart);
   };
 
   const addOrUpdateEvent = (e) => {
@@ -47,7 +63,8 @@ const EventCalendar = () => {
       start,
       end,
       notes,
-      location, // Include location
+      location,
+      link,
     };
 
     const updatedEvents = editingId
@@ -68,7 +85,8 @@ const EventCalendar = () => {
     setStart(event.start);
     setEnd(event.end);
     setNotes(event.notes);
-    setLocation(event.location || ""); // Load location
+    setLocation(event.location || "");
+    setLink(event.link || ""); // Load link
     setEditingId(event.id);
   };
 
@@ -102,6 +120,10 @@ const EventCalendar = () => {
           <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} />
         </label>
         <label>
+          Link (optional):
+          <input type="url" value={link} onChange={(e) => setLink(e.target.value)} />
+        </label>
+        <label>
           Notes:
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
@@ -125,6 +147,11 @@ const EventCalendar = () => {
             {event.start} to {event.end}<br />
             📍 {event.location || "No location"}<br />
             📝 {event.notes}<br />
+            {event.link && (
+              <>
+                🔗 <a href={event.link} target="_blank" rel="noopener noreferrer">{event.link}</a><br />
+              </>
+            )}
             <button onClick={() => editEvent(event)}>Edit</button>
             <button onClick={() => deleteEvent(event.id)}>Delete</button>
           </li>
