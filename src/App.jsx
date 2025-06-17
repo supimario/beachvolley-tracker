@@ -6,7 +6,7 @@ import PlayerSignup from "./pages/PlayerSignup";
 import LoginForm from "./components/LoginForm";
 import GameForm from "./components/GameForm";
 import GameList from "./components/GameList";
-import Add from "./pages/Add"; // ✅ Keep using Add.jsx
+import Add from "./pages/Add";
 import Players from "./pages/Players";
 import Blog from "./pages/Blog";
 import Profile from "./pages/Profile";
@@ -14,7 +14,7 @@ import PlayerProfile from "./pages/PlayerProfile";
 import Stats from "./pages/Stats";
 import Settings from "./pages/Settings";
 import WithBackButton from "./components/WithBackButton";
-import EventCalendar from "./components/EventCalendar"; // ✅ NEW IMPORT
+import EventCalendar from "./components/EventCalendar";
 import { Routes, Route, useNavigate } from "react-router-dom";
 
 function App({ currentPath }) {
@@ -87,7 +87,7 @@ function App({ currentPath }) {
   const addGame = (newGame) => {
     setGames((prev) => {
       const updated = [...prev, newGame];
-      localStorage.setItem("games", JSON.stringify(updated)); // Persist to localStorage
+      localStorage.setItem("games", JSON.stringify(updated));
       console.log("Saved games to localStorage:", updated);
       return updated;
     });
@@ -116,7 +116,7 @@ function App({ currentPath }) {
   }
 
   return (
-    <div className="App">
+    <div className="App min-h-screen bg-gradient-to-br from-yellow-100 via-blue-100 to-orange-100">
       <Header loggedInUser={loggedInUser} logout={logout} />
       {loggedInUser && <NavBar navigate={navigate} loggedInUser={loggedInUser} />}
       <main className="max-w-5xl mx-auto p-4">
@@ -138,7 +138,7 @@ function App({ currentPath }) {
                     className="mx-auto rounded-xl shadow-lg max-w-full h-auto"
                   />
                   <div className="mt-6">
-                    <EventCalendar /> {/* ✅ NEW CALENDAR COMPONENT */}
+                    <EventCalendar />
                   </div>
                 </div>
               </WithBackButton>
@@ -215,8 +215,8 @@ function App({ currentPath }) {
                   games={games}
                   addGame={addGame}
                   deleteGame={deleteGame}
-                  setGames={setGames} // ✅ FIXED: enable per-game deletion
-                  loggedInUser={loggedInUser} // optional, if used in Add
+                  setGames={setGames}
+                  loggedInUser={loggedInUser}
                 />
               </WithBackButton>
             }
